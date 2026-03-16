@@ -55,25 +55,17 @@ docker exec -it skywalking8-java8-demo-mysql-1 mysql -uskywalking -pskywalking12
 docker compose down -v --remove-orphans
 ```
 
-## 5) 性能剖析无数据排查
+## 5) 如何测试性能剖析功能
 
-这是正常现象，`性能剖析` 必须满足 3 个条件才会出数据：
-
-- Task 任务时间窗口内有请求
-- 请求命中你配置的精确端点名（建议用 `POST:/api/orders/create`）
-- 请求要“足够慢”（否则不会产出 thread dump）
-
-如果页面出现 `Sampled Traces = No Data`，通常是任务建好了但没有命中以上条件。
-
-直接这样测（可复现）：
+`性能剖析` 功能的标准测试步骤如下。
 
 1. 在 UI 新建任务
 - 服务：`demo-order`
 - 端点：`POST:/api/orders/create`（注意带 `POST:`）
 - 持续时间：10~20 分钟
-- Min Duration 设小一点（如 `100ms`）
+- Min Duration：`100ms`（建议）
 
-2. 立刻打慢请求流量（持续 2~5 分钟）
+2. 在任务生效后，立即打慢请求流量（持续 2~5 分钟）
 
 ```bash
 for i in $(seq 1 300); do
@@ -81,3 +73,8 @@ for i in $(seq 1 300); do
   sleep 0.2
 done
 ```
+
+3. 回到 UI 的 `性能剖析` 页面，选择刚创建的任务并点击 `分析`
+- 左下 `Sampled Traces` 应出现采样链路
+- 中间 Span 列表应展示调用明细
+- 右下 `Thread Stack` 可能为空；这是正常现象，只有采到线程栈 dump 才会显示
