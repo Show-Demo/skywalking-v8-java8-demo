@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,6 +28,11 @@ public class LabController {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final JdbcTemplate jdbcTemplate;
+
+    public LabController(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @Value("${QYWX_WEBHOOK_URL:}")
     private String qywxWebhookUrl;
@@ -37,6 +43,11 @@ public class LabController {
             @RequestParam(defaultValue = "") String detail
     ) {
         Map<String, Object> result = new HashMap<String, Object>();
+        jdbcTemplate.update(
+                "INSERT INTO lab_actions(action, detail, created_at) VALUES (?, ?, NOW())",
+                action,
+                detail
+        );
         result.put("status", "ok");
         result.put("action", action);
         result.put("detail", detail);

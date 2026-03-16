@@ -1,4 +1,22 @@
 services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: skywalking_demo
+      MYSQL_USER: skywalking
+      MYSQL_PASSWORD: skywalking123
+      MYSQL_ROOT_PASSWORD: root123456
+    ports:
+      - "3306:3306"
+    volumes:
+      - sw8j8-mysql-data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot123456"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
   es:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.14
     environment:
@@ -42,10 +60,14 @@ services:
       dockerfile: docker/handler/Dockerfile
     depends_on:
       - oap
+      - mysql
     environment:
       SW_OAP_ADDR: oap:11800
       SW_AGENT_NAME: demo-handler
       QYWX_WEBHOOK_URL: ${QYWX_WEBHOOK_URL:-}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/skywalking_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: skywalking
+      SPRING_DATASOURCE_PASSWORD: skywalking123
     ports:
       - "8080:8080"
 
@@ -56,12 +78,17 @@ services:
     depends_on:
       - demo-handler
       - oap
+      - mysql
     environment:
       SW_OAP_ADDR: oap:11800
       SW_AGENT_NAME: demo-order
       HANDLER_BASE_URL: http://demo-handler:8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/skywalking_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: skywalking
+      SPRING_DATASOURCE_PASSWORD: skywalking123
     ports:
       - "8081:8081"
 
 volumes:
   sw8j8-es-data:
+  sw8j8-mysql-data:

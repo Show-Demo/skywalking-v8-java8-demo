@@ -3,6 +3,10 @@ server:
 spring:
   application:
     name: demo-order
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/skywalking_demo?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:skywalking}
+    password: ${SPRING_DATASOURCE_PASSWORD:skywalking123}
 handler:
   base-url: ${HANDLER_BASE_URL:http://127.0.0.1:8080}
 logging:

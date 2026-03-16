@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +19,11 @@ import java.util.Map;
 public class OrderController {
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final JdbcTemplate jdbcTemplate;
+
+    public OrderController(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
 
     @Value("${handler.base-url:http://127.0.0.1:8080}")
     private String handlerBaseUrl;
@@ -41,9 +47,17 @@ public class OrderController {
         }
 
         Map<String, Object> result = new HashMap<String, Object>();
+        jdbcTemplate.update(
+                "INSERT INTO orders(order_no, slow_ms, fail_rate, created_at) VALUES (?, ?, ?, NOW())",
+                orderNo,
+                slowMs,
+                failRate
+        );
+        Integer total = jdbcTemplate.queryForObject("SELECT COUNT(1) FROM orders", Integer.class);
         result.put("status", "ok");
         result.put("orderNo", orderNo);
         result.put("handler", handlerBaseUrl);
+        result.put("totalInDb", total == null ? 0 : total);
         return result;
     }
 
