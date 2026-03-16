@@ -1,0 +1,11 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: demo-order
+handler:
+  base-url: ${HANDLER_BASE_URL:http://127.0.0.1:8080}
+logging:
+  level:
+    root: INFO
+    com.example.order: INFO

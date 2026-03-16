@@ -1,0 +1,30 @@
+rules:
+  service_resp_time_rule:
+    metrics-name: service_resp_time
+    op: ">"
+    threshold: 200
+    period: 1
+    count: 1
+    silence-period: 3
+    message: "Service {name} average response time > 200ms"
+
+  service_sla_rule:
+    metrics-name: service_sla
+    op: "<"
+    threshold: 9999
+    period: 1
+    count: 1
+    silence-period: 3
+    message: "Service {name} success rate < 99.99%"
+
+  endpoint_resp_time_rule:
+    metrics-name: endpoint_avg
+    op: ">"
+    threshold: 300
+    period: 1
+    count: 1
+    silence-period: 3
+    message: "Endpoint {name} average response time > 300ms"
+
+webhooks:
+  - http://host.docker.internal:8080/api/lab/skywalking-alarm

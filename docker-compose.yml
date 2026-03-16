@@ -1,0 +1,67 @@
+services:
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.14
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      xpack.security.enabled: "false"
+      xpack.monitoring.enabled: "false"
+      xpack.watcher.enabled: "false"
+      ingest.geoip.downloader.enabled: "false"
+    ports:
+      - "9200:9200"
+    volumes:
+      - sw8j8-es-data:/usr/share/elasticsearch/data
+
+  oap:
+    image: apache/skywalking-oap-server:8.9.1
+    depends_on:
+      - es
+    restart: unless-stopped
+    environment:
+      SW_STORAGE: elasticsearch
+      SW_STORAGE_ES_CLUSTER_NODES: es:9200
+    ports:
+      - "11800:11800"
+      - "12800:12800"
+    volumes:
+      - ./skywalking8/config/alarm-settings.yml:/skywalking/config/alarm-settings.yml:ro
+
+  ui:
+    image: apache/skywalking-ui:8.9.1
+    depends_on:
+      - oap
+    environment:
+      SW_OAP_ADDRESS: http://oap:12800
+    ports:
+      - "8088:8080"
+
+  demo-handler:
+    build:
+      context: .
+      dockerfile: docker/handler/Dockerfile
+    depends_on:
+      - oap
+    environment:
+      SW_OAP_ADDR: oap:11800
+      SW_AGENT_NAME: demo-handler
+      QYWX_WEBHOOK_URL: ${QYWX_WEBHOOK_URL:-}
+    ports:
+      - "8080:8080"
+
+  demo-order:
+    build:
+      context: .
+      dockerfile: docker/order/Dockerfile
+    depends_on:
+      - demo-handler
+      - oap
+    environment:
+      SW_OAP_ADDR: oap:11800
+      SW_AGENT_NAME: demo-order
+      HANDLER_BASE_URL: http://demo-handler:8080
+    ports:
+      - "8081:8081"
+
+volumes:
+  sw8j8-es-data:
