@@ -11,6 +11,10 @@ docker compose up -d --build
 
 访问地址：`http://localhost:8088`
 
+默认会同时启动 Nacos（SkyWalking 告警动态配置中心）：
+- 地址：`http://127.0.0.1:8848/nacos`
+- 启动时会自动把 `skywalking8/config/alarm-settings.yml` 发布到 Nacos（`dataId=alarm.default.alarm-settings`, `group=skywalking`）
+
 默认会同时启动 MySQL：
 - 地址：`127.0.0.1:3306`
 - 库名：`skywalking_demo`
@@ -48,6 +52,12 @@ docker exec -it skywalking8-java8-demo-mysql-1 mysql -uskywalking -pskywalking12
 - 拓扑出现 `demo-order -> demo-handler`
 - 日志输出 `Received SkyWalking alarm`
 - 配置了企微时输出 `Forwarded alarm to WeCom, status=200`
+
+可选：查看 Nacos 中已发布的告警配置
+
+```bash
+curl --noproxy '*' -s "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=alarm.default.alarm-settings&group=skywalking"
+```
 
 ## 4) 停止并清理
 
