@@ -13,6 +13,8 @@ docker compose up -d --build
 
 默认会同时启动 Nacos（SkyWalking 告警动态配置中心）：
 - 地址：`http://127.0.0.1:8848/nacos`
+- 用户名：`nacos`
+- 密码：`nacos`
 - 启动时会自动把 `skywalking8/config/alarm-settings.yml` 发布到 Nacos（`dataId=alarm.default.alarm-settings`, `group=skywalking`）
 
 默认会同时启动 MySQL：

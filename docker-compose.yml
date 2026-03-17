@@ -3,7 +3,10 @@ services:
     image: nacos/nacos-server:v2.2.3
     environment:
       MODE: standalone
-      NACOS_AUTH_ENABLE: "false"
+      NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_IDENTITY_KEY: serverIdentity
+      NACOS_AUTH_IDENTITY_VALUE: security
+      NACOS_AUTH_TOKEN: U2t5V2Fsa2luZ05hY29zQXV0aFRva2VuU2VjcmV0S2V5MjAyNg==
       PREFER_HOST_MODE: hostname
     ports:
       - "8848:8848"
@@ -20,6 +23,9 @@ services:
     volumes:
       - ./skywalking8/config/alarm-settings.yml:/config/alarm-settings.yml:ro
       - ./docker/nacos/init-alarm.sh:/init/init-alarm.sh:ro
+    environment:
+      NACOS_USERNAME: nacos
+      NACOS_PASSWORD: nacos
     entrypoint: ["/bin/sh", "/init/init-alarm.sh"]
     restart: "no"
 
@@ -70,6 +76,8 @@ services:
       SW_CONFIG_NACOS_SERVER_PORT: 8848
       SW_CONFIG_NACOS_SERVER_GROUP: skywalking
       SW_CONFIG_NACOS_PERIOD: 10
+      SW_CONFIG_NACOS_USERNAME: nacos
+      SW_CONFIG_NACOS_PASSWORD: nacos
     ports:
       - "11800:11800"
       - "12800:12800"
