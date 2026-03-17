@@ -17,7 +17,6 @@ docker compose up -d --build
 - 密码：`nacos`
 - 启动时会自动把 `skywalking8/config/alarm-settings.yml` 发布到 Nacos（`dataId=alarm.default.alarm-settings`, `group=skywalking`）
 - 已开启鉴权：`NACOS_AUTH_ENABLE=true`
-- `NACOS_AUTH_TOKEN` 是 Nacos JWT 签名密钥（不是登录密码），登录接口返回的 `accessToken` 由它签发并校验
 
 默认会同时启动 MySQL：
 - 地址：`127.0.0.1:3306`
@@ -57,7 +56,7 @@ docker exec -it skywalking8-java8-demo-mysql-1 mysql -uskywalking -pskywalking12
 - 日志输出 `Received SkyWalking alarm`
 - 配置了企微时输出 `Forwarded alarm to WeCom, status=200`
 
-可选：查看 Nacos 中已发布的告警配置
+可选：查看 Nacos 中已发布的告警配置（动态配置中心里的真实内容）
 
 ```bash
 TOKEN=$(curl --noproxy '*' -s -X POST "http://127.0.0.1:8848/nacos/v1/auth/login" \
@@ -68,13 +67,50 @@ TOKEN=$(curl --noproxy '*' -s -X POST "http://127.0.0.1:8848/nacos/v1/auth/login
 curl --noproxy '*' -s "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=alarm.default.alarm-settings&group=skywalking&accessToken=${TOKEN}"
 ```
 
-## 4) 停止并清理
+## 4) SkyWalking 使用 Nacos 动态配置中心说明
+
+本项目里，SkyWalking OAP 并不直接读本地 `alarm-settings.yml`，而是通过 Nacos 拉取配置：
+
+1. `nacos` 服务启动（配置中心）
+2. `nacos-init` 容器把本地 `skywalking8/config/alarm-settings.yml` 发布到 Nacos
+3. OAP 使用 `configuration: nacos` 从 Nacos 周期拉取配置并动态生效
+
+对应的关键配置（见 `docker-compose.yml`）：
+
+- `SW_CONFIGURATION=nacos`
+- `SW_CONFIG_NACOS_SERVER_ADDR=nacos`
+- `SW_CONFIG_NACOS_SERVER_PORT=8848`
+- `SW_CONFIG_NACOS_SERVER_GROUP=skywalking`
+- `SW_CONFIG_NACOS_USERNAME=nacos`
+- `SW_CONFIG_NACOS_PASSWORD=nacos`
+
+告警配置在 Nacos 里的键：
+
+- `dataId=alarm.default.alarm-settings`
+- `group=skywalking`
+
+这个 `dataId` 是 SkyWalking 约定格式：`<module>.<provider>.alarm-settings`，本例即 `alarm.default.alarm-settings`。
+
+## 5) 如何验证“动态配置已生效（无需重启 OAP）”
+
+1. 打开 Nacos 配置管理，编辑 `alarm.default.alarm-settings`
+2. 例如把 `service_resp_time_rule.threshold` 从 `200` 改成 `50`，保存
+3. 等待约 10 秒（本项目 `SW_CONFIG_NACOS_PERIOD=10`）
+4. 查看 OAP 日志是否出现 `Update alarm rules`
+
+```bash
+docker compose logs --no-color oap | grep "Update alarm rules" | tail -n 3
+```
+
+5. 再打一轮请求，观察是否按新阈值更容易触发告警
+
+## 6) 停止并清理
 
 ```bash
 docker compose down -v --remove-orphans
 ```
 
-## 5) 如何测试性能剖析功能
+## 7) 如何测试性能剖析功能
 
 `性能剖析` 功能的标准测试步骤如下。
 
