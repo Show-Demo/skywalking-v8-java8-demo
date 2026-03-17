@@ -16,6 +16,8 @@ docker compose up -d --build
 - 用户名：`nacos`
 - 密码：`nacos`
 - 启动时会自动把 `skywalking8/config/alarm-settings.yml` 发布到 Nacos（`dataId=alarm.default.alarm-settings`, `group=skywalking`）
+- 已开启鉴权：`NACOS_AUTH_ENABLE=true`
+- `NACOS_AUTH_TOKEN` 是 Nacos JWT 签名密钥（不是登录密码），登录接口返回的 `accessToken` 由它签发并校验
 
 默认会同时启动 MySQL：
 - 地址：`127.0.0.1:3306`
@@ -58,7 +60,12 @@ docker exec -it skywalking8-java8-demo-mysql-1 mysql -uskywalking -pskywalking12
 可选：查看 Nacos 中已发布的告警配置
 
 ```bash
-curl --noproxy '*' -s "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=alarm.default.alarm-settings&group=skywalking"
+TOKEN=$(curl --noproxy '*' -s -X POST "http://127.0.0.1:8848/nacos/v1/auth/login" \
+  --data-urlencode "username=nacos" \
+  --data-urlencode "password=nacos" \
+  | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
+
+curl --noproxy '*' -s "http://127.0.0.1:8848/nacos/v1/cs/configs?dataId=alarm.default.alarm-settings&group=skywalking&accessToken=${TOKEN}"
 ```
 
 ## 4) 停止并清理
