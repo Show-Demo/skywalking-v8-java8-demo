@@ -3,6 +3,7 @@ set -eu
 
 NACOS_URL="http://nacos:8848/nacos/v1/cs/configs"
 DATA_ID="alarm.default.alarm-settings"
+LEGACY_DATA_ID="alarm.default"
 GROUP="skywalking"
 CONTENT_FILE="/config/alarm-settings.yml"
 
@@ -24,5 +25,8 @@ curl -fsS -X POST "${NACOS_URL}" \
   --data-urlencode "dataId=${DATA_ID}" \
   --data-urlencode "group=${GROUP}" \
   --data-urlencode "content=$(cat "${CONTENT_FILE}")" >/dev/null
+
+echo "[nacos-init] deleting legacy ${LEGACY_DATA_ID} if exists"
+curl -fsS -X DELETE "${NACOS_URL}?dataId=${LEGACY_DATA_ID}&group=${GROUP}" >/dev/null || true
 
 echo "[nacos-init] done"
